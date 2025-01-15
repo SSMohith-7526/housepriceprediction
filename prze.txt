@@ -1,0 +1,129 @@
+# Import necessary libraries
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+import zipfile
+
+# --- Load Data from ZIP File ---
+zip_file_path = '/content/archive (7).zip'  # Replace with your ZIP file path
+excel_file_name = '/content/House Price Prediction Dataset.csv'  # Replace with your Excel file name inside the ZIP
+
+# Extract and read the Excel file
+with zipfile.ZipFile(zip_file_path, 'r') as z:
+    with z.open(excel_file_name) as f:
+        house_price_data = pd.read_excel(f)
+
+# Display the first few rows to verify data
+print(house_price_data.head())
+
+# --- Preprocess Data ---
+# Define features and target
+X = house_price_data.drop(columns=['Price'])  # Replace 'Price' with the target column
+X = pd.get_dummies(X, drop_first=True)  # One-hot encoding for categorical features
+y = house_price_data['Price']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# --- Linear Regression ---
+print("\n--- Linear Regression ---")
+lr_model = LinearRegression()
+lr_model.fit(X_train, y_train)
+
+# Predictions
+lr_predictions = lr_model.predict(X_test)
+
+# Evaluation
+lr_mse = mean_squared_error(y_test, lr_predictions)
+lr_r2 = r2_score(y_test, lr_predictions)
+print("Linear Regression Results:")
+print(f"Mean Squared Error: {lr_mse:.2f}")
+print(f"R-squared: {lr_r2:.2f}")
+
+# Plot actual vs predicted prices
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, lr_predictions, alpha=0.7, color='blue')
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=2)
+plt.title("Linear Regression: Actual vs Predicted Prices")
+plt.xlabel("Actual Prices")
+plt.ylabel("Predicted Prices")
+plt.show()
+
+# --- Random Forest ---
+print("\n--- Random Forest ---")
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+# Predictions
+rf_predictions = rf_model.predict(X_test)
+
+# Evaluation
+rf_mse = mean_squared_error(y_test, rf_predictions)
+rf_r2 = r2_score(y_test, rf_predictions)
+print("Random Forest Results:")
+print(f"Mean Squared Error: {rf_mse:.2f}")
+print(f"R-squared: {rf_r2:.2f}")
+
+# Feature importance
+rf_importances = rf_model.feature_importances_
+plt.figure(figsize=(10, 6))
+plt.barh(X.columns, rf_importances, color='green')
+plt.title("Random Forest: Feature Importances")
+plt.xlabel("Importance")
+plt.ylabel("Feature")
+plt.show()
+
+# --- Decision Tree ---
+print("\n--- Decision Tree ---")
+dt_model = DecisionTreeRegressor(random_state=42)
+dt_model.fit(X_train, y_train)
+
+# Predictions
+dt_predictions = dt_model.predict(X_test)
+
+# Evaluation
+dt_mse = mean_squared_error(y_test, dt_predictions)
+dt_r2 = r2_score(y_test, dt_predictions)
+print("Decision Tree Results:")
+print(f"Mean Squared Error: {dt_mse:.2f}")
+print(f"R-squared: {dt_r2:.2f}")
+
+# Plot decision tree predictions vs actual prices
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, dt_predictions, alpha=0.7, color='red')
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=2)
+plt.title("Decision Tree: Actual vs Predicted Prices")
+plt.xlabel("Actual Prices")
+plt.ylabel("Predicted Prices")
+plt.show()
+
+# --- Additional Insights ---
+# Analyzing trends in house prices over time
+plt.figure(figsize=(10, 6))
+plt.scatter(house_price_data['YearBuilt'], house_price_data['Price'], alpha=0.5, color='purple')
+plt.title("House Prices vs Year Built")
+plt.xlabel("Year Built")
+plt.ylabel("Price")
+plt.show()
+
+# Identify potential "good time to buy" (low price trends by year)
+yearly_avg_prices = house_price_data.groupby('YearBuilt')['Price'].mean()
+plt.figure(figsize=(10, 6))
+yearly_avg_prices.plot(kind='line', color='orange')
+plt.title("Average House Prices by Year Built")
+plt.xlabel("Year Built")
+plt.ylabel("Average Price")
+plt.show()
+
+# Highlighting the cheapest areas for buying houses
+average_prices_by_location = house_price_data.groupby('Location')['Price'].mean()
+plt.figure(figsize=(10, 6))
+average_prices_by_location.sort_values().plot(kind='bar', color='cyan')
+plt.title("Average House Prices by Location")
+plt.xlabel("Location")
+plt.ylabel("Average Price")
+plt.show()
